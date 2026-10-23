@@ -1,0 +1,53 @@
+{
+  "name": "murmur",
+  "private": true,
+  "version": "0.7.4",
+  "type": "module",
+  "description": "Murmur, Birdbrain's open app: notes, people and groups in one window, on your own machine.",
+  "scripts": {
+    "dev": "vite",
+    "build": "tsc -b && vite build",
+    "preview": "vite preview",
+    "tauri": "tauri",
+    "new-plugin": "bun scripts/new-plugin.ts",
+    "github-release": "bun scripts/github-release.ts"
+  },
+  "dependencies": {
+    "@codemirror/lang-markdown": "^6.5.0",
+    "@codemirror/state": "^6.6.0",
+    "@codemirror/view": "^6.43.0",
+    "@polkadot-labs/hdkd": "0.0.32",
+    "@polkadot-labs/hdkd-helpers": "0.0.34",
+    "@tauri-apps/api": "~2.12.0",
+    "@tauri-apps/plugin-notification": "^2",
+    "@tauri-apps/plugin-opener": "^2",
+    "@tauri-apps/plugin-process": "~2.4.0",
+    "@tauri-apps/plugin-updater": "~2.13.0",
+    "codemirror": "^6.0.2",
+    "ethers": "^6.13.5",
+    "livekit-client": "2.22.4",
+    "lucide-react": "^0.460.0",
+    "matrix-js-sdk": "^34.11.1",
+    "polkadot-api": "1.23.3",
+    "poseidon-lite": "^0.3.0",
+    "react": "^18.3.1",
+    "react-dom": "^18.3.1",
+    "snarkjs": "^0.7.5",
+    "y-codemirror.next": "^0.3.5",
+    "y-indexeddb": "^9.0.12",
+    "y-websocket": "^3.0.0",
+    "yjs": "^13.6.31"
+  },
+  "devDependencies": {
+    "@tailwindcss/vite": "^4.0.0",
+    "@tauri-apps/cli": "^2.1.0",
+    "@types/react": "^18.3.12",
+    "@types/react-dom": "^18.3.1",
+    "@types/snarkjs": "^0.7.9",
+    "@vitejs/plugin-react": "^4.3.4",
+    "tailwindcss": "^4.0.0",
+    "typescript": "^5.6.3",
+    "vite": "^6.0.3"
+  },
+  "license": "Apache-2.0"
+}

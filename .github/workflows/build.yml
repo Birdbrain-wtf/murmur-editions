@@ -1,0 +1,114 @@
+name: build
+
+# Builds the Birdbrain edition, for the platforms named in .platforms (mac, linux),
+# from the open-core export Zo pushes to Birdbrain-wtf/murmur-editions
+# (lab/murmur/scripts/cloud-release-build.ts). Birdbrain's builds run in Birdbrain's
+# own GitHub org, never Decent Partners'. Nothing here is signed for the updater: Zo
+# downloads the builds and signs them with Birdbrain's key, which never comes here.
+# Mac builds are ad-hoc code-signed, not notarised.
+#
+# MURMUR_SMP_RELAY (repo secret) is the private-messages relay address with its
+# queue password, compiled in. It ships inside the app, so it is a speed bump, not a secret.
+
+on:
+  push:
+    branches: [main]
+
+jobs:
+  plan:
+    runs-on: ubuntu-latest
+    outputs:
+      mac: ${{ steps.p.outputs.mac }}
+      linux: ${{ steps.p.outputs.linux }}
+    steps:
+      - uses: actions/checkout@v4
+      - id: p
+        run: |
+          P=$(cat .platforms 2>/dev/null || echo "mac linux")
+          for x in mac linux; do
+            case " $P " in *" $x "*) echo "$x=true" >> "$GITHUB_OUTPUT";; *) echo "$x=false" >> "$GITHUB_OUTPUT";; esac
+          done
+
+  macos:
+    needs: plan
+    if: needs.plan.outputs.mac == 'true'
+    runs-on: macos-14
+    steps:
+      - uses: actions/checkout@v4
+      - uses: oven-sh/setup-bun@v2
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: aarch64-apple-darwin
+      - uses: swatinem/rust-cache@v2
+        with:
+          workspaces: src-tauri
+      - name: Install frontend deps
+        run: bun install --frozen-lockfile
+      - name: Build Birdbrain
+        env:
+          MURMUR_SMP_RELAY: ${{ secrets.MURMUR_SMP_RELAY }}
+        run: |
+          set -euo pipefail
+          VERSION=$(jq -r .version package.json)
+          BUNDLE=src-tauri/target/release/bundle
+          mkdir -p out
+          bunx @tauri-apps/cli@^2.1.0 build --bundles app,dmg --config '{"bundle":{"createUpdaterArtifacts":false,"macOS":{"signingIdentity":"-"}}}'
+          tar -czf "out/Birdbrain_${VERSION}_aarch64.app.tar.gz" -C "$BUNDLE/macos" "Birdbrain.app"
+          cp "$BUNDLE"/dmg/Birdbrain_*_aarch64.dmg "out/Birdbrain_${VERSION}_aarch64.dmg"
+          ls -la out
+      # The private messages program for this Mac, as the app will fetch it: from
+      # birdbrain.wtf, with its library beside it. Proves it runs before members try.
+      - name: Private messages program runs
+        run: |
+          set -euo pipefail
+          M=$(curl -fsSL https://birdbrain.wtf/app/simplex/latest.json)
+          mkdir -p sx/lib
+          curl -fsSL "$(echo "$M" | jq -r '.platforms["darwin-aarch64"].libs[0].url')" | gunzip > sx/lib/libcrypto.3.dylib
+          curl -fsSL "$(echo "$M" | jq -r '.platforms["darwin-aarch64"].url')" | gunzip > sx/simplex-chat
+          chmod +x sx/simplex-chat
+          DYLD_LIBRARY_PATH="$PWD/sx/lib" ./sx/simplex-chat -h > sx/help.txt 2>&1 || true
+          head -5 sx/help.txt
+          grep -qi "simplex" sx/help.txt
+      - uses: actions/upload-artifact@v4
+        with:
+          name: editions
+          path: out/
+          retention-days: 1
+
+  # The oldest supported Ubuntu, so the builds run on any distribution with the
+  # same or a newer glibc. AppImage carries its own WebKit, the .deb asks for the system's.
+  linux:
+    needs: plan
+    if: needs.plan.outputs.linux == 'true'
+    runs-on: ubuntu-22.04
+    steps:
+      - uses: actions/checkout@v4
+      - name: System libraries
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y libwebkit2gtk-4.1-dev libayatana-appindicator3-dev librsvg2-dev libdbus-1-dev libssl-dev patchelf file
+      - uses: oven-sh/setup-bun@v2
+      - uses: dtolnay/rust-toolchain@stable
+      - uses: swatinem/rust-cache@v2
+        with:
+          workspaces: src-tauri
+      - name: Install frontend deps
+        run: bun install --frozen-lockfile
+      - name: Build Birdbrain
+        env:
+          NO_STRIP: "true"
+          MURMUR_SMP_RELAY: ${{ secrets.MURMUR_SMP_RELAY }}
+        run: |
+          set -euo pipefail
+          VERSION=$(jq -r .version package.json)
+          BUNDLE=src-tauri/target/release/bundle
+          mkdir -p out
+          bunx @tauri-apps/cli@^2.1.0 build --bundles appimage,deb --config '{"mainBinaryName":"birdbrain","bundle":{"createUpdaterArtifacts":false}}'
+          cp "$BUNDLE"/appimage/Birdbrain_*_amd64.AppImage "out/Birdbrain_${VERSION}_amd64.AppImage"
+          cp "$BUNDLE"/deb/Birdbrain_*_amd64.deb "out/Birdbrain_${VERSION}_amd64.deb"
+          ls -la out
+      - uses: actions/upload-artifact@v4
+        with:
+          name: editions-linux
+          path: out/
+          retention-days: 1

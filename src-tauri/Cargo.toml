@@ -1,0 +1,80 @@
+[package]
+name = "murmur"
+version = "0.7.4"
+description = "Murmur and its editions: a plugin host over Matrix, Seeds and the group's memory"
+authors = ["Birdbrain"]
+edition = "2021"
+rust-version = "1.77.2"
+
+[lib]
+name = "murmur_lib"
+crate-type = ["staticlib", "cdylib", "rlib"]
+
+[build-dependencies]
+tauri-build = { version = "2", features = [] }
+
+[dependencies]
+tauri = { version = "2", features = [] }
+tauri-plugin-process = "2"
+# Opens the member's own browser for sign-in: a passkey belongs to a website, not to this window.
+tauri-plugin-opener = "2"
+# Desktop alerts for chat messages, each one under the member's own settings in Chat.
+tauri-plugin-notification = "2"
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
+
+# The updater is desktop-only — mobile apps update through their app store, so
+# the plugin must not be compiled into iOS/Android builds.
+[target.'cfg(not(any(target_os = "android", target_os = "ios")))'.dependencies]
+tauri-plugin-updater = "2"
+# Keep a copy (ADR 0068, step 2): check the node program against Birdbrain's key, unpack it.
+minisign-verify = "0.2"
+flate2 = "1"
+base64 = "0.22"
+
+# Secrets and API keys live in the system's own secure store (the macOS Keychain,
+# Windows Credential Manager, the Linux desktop's keyring), never in the webview's
+# storage. See src/lib/secrets.ts.
+# The light client (ADR 0068): checks the chain's finality proofs on this device. No
+# wasmtime: smoldot's own interpreter runs the runtime calls a light client needs, and
+# wasmtime would add megabytes. GPL-3.0 with the Classpath exception, which allows
+# linking it into the Apache-2.0 app.
+[target.'cfg(not(any(target_os = "android", target_os = "ios")))'.dependencies.smoldot-light]
+version = "2.1.0"
+default-features = false
+features = ["std"]
+[target.'cfg(not(any(target_os = "android", target_os = "ios")))'.dependencies.smol]
+version = "2"
+# Keep a copy (ADR 0068, step 2): fetch the node program, check it against Birdbrain's
+# release key, unpack it. All four are already in the tree through the updater.
+[target.'cfg(not(any(target_os = "android", target_os = "ios")))'.dependencies.reqwest]
+version = "0.13"
+default-features = false
+features = ["blocking", "json", "rustls-no-provider"]
+[target.'cfg(not(any(target_os = "android", target_os = "ios")))'.dependencies.rustls]
+version = "0.23"
+default-features = false
+features = ["ring"]
+
+[target.'cfg(target_os = "macos")'.dependencies]
+keyring = { version = "3", features = ["apple-native"] }
+[target.'cfg(target_os = "windows")'.dependencies]
+keyring = { version = "3", features = ["windows-native"] }
+# Linux: the desktop keyring over the Secret Service (GNOME Keyring, KWallet). Not
+# "linux-native", which is the kernel keyring and is emptied at every reboot.
+[target.'cfg(target_os = "linux")'.dependencies]
+keyring = { version = "3", features = ["sync-secret-service", "crypto-rust"] }
+# Calls: WebKitGTK keeps WebRTC off and refuses the microphone and camera unless the
+# app switches them on (src/media.rs). Same version the webview already uses.
+webkit2gtk = { version = "2.0", features = ["v2_40"] }
+
+[profile.release]
+panic = "abort"
+codegen-units = 1
+lto = true
+opt-level = "s"
+strip = true
+
+# Tests only: print the light client's own log (it is already in the tree through smoldot).
+[dev-dependencies]
+log = "0.4"

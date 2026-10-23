@@ -1,0 +1,229 @@
+@import "tailwindcss";
+
+/* NOTE: this project is its own git repo on purpose. The workspace root
+   .gitignore is `*`, which would otherwise hide every source file from
+   Tailwind v4's content scanner (it respects .gitignore). A local `.git`
+   boundary stops the scanner reading the parent ignore, so auto-detection
+   works. Keep the `.git` here — without it, utilities won't generate. */
+
+/*
+  Prism design language — "white is the resting state, colour is the
+  consequence of interaction." The app rests in near-total white; the
+  spectrum only appears through hover, focus, activity and selection.
+*/
+
+:root {
+  --bg: #ffffff;
+  --fg: #0a0a0a;
+  --muted: #6b6b6b;
+  --faint: #737373;
+  --line: #ececec;
+  --line-strong: #d8d8d8;
+  --card: #ffffff;
+  --raise: #fafafa;
+
+  /* the spectrum — only deployed on interaction */
+  --spectrum: linear-gradient(
+    90deg,
+    #ff3b30 0%,
+    #ff9500 17%,
+    #ffcc00 33%,
+    #34c759 50%,
+    #00c7be 66%,
+    #007aff 83%,
+    #af52de 100%
+  );
+  /* the single accent — focus rings, selection, primary affordances. A skin
+     overrides this (and --spectrum) to rebrand the client. */
+  --accent: #007aff;
+  --radius: 10px;
+
+  /* state colours: a 6px dot or a line of text, never a filled pill */
+  --ok: #1f9d55;
+  --warn: #b7791f;
+  --danger: #c1271d;
+
+  /* Prism motion: one curve, never under 220ms */
+  --ease: cubic-bezier(0.22, 1, 0.36, 1);
+  --font-ui: "Inter", system-ui, sans-serif;
+  --font-tight: "Inter Tight", "Inter", sans-serif;
+  --font-mono: "JetBrains Mono", ui-monospace, monospace;
+  --font-serif: "Newsreader", Georgia, serif;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html,
+body,
+#root {
+  height: 100%;
+  margin: 0;
+}
+
+body {
+  background: var(--bg);
+  color: var(--fg);
+  font-family: var(--font-ui);
+  font-weight: 400;
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+}
+
+::selection {
+  background: color-mix(in srgb, var(--accent) 16%, transparent);
+}
+
+/* thin spectral bar — the only resting colour, hairline-quiet */
+.spectrum-bar {
+  height: 2px;
+  background: var(--spectrum);
+  opacity: 0.9;
+}
+
+/* a surface that reveals spectrum on hover */
+.prism-hover {
+  position: relative;
+  transition: color 0.24s var(--ease), background 0.24s var(--ease), border-color 0.24s var(--ease);
+}
+.prism-hover::after {
+  content: "";
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  height: 2px;
+  background: var(--spectrum);
+  opacity: 0;
+  transform: scaleX(0.4);
+  transform-origin: left;
+  transition: opacity 0.24s var(--ease), transform 0.3s var(--ease);
+}
+.prism-hover:hover::after,
+.prism-hover[data-active="true"]::after {
+  opacity: 1;
+  transform: scaleX(1);
+}
+
+.font-mono {
+  font-family: var(--font-mono);
+}
+.font-tight {
+  font-family: var(--font-tight);
+}
+.font-serif {
+  font-family: var(--font-serif);
+}
+
+/* quiet scrollbars */
+* {
+  scrollbar-width: thin;
+  scrollbar-color: var(--line-strong) transparent;
+}
+*::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+*::-webkit-scrollbar-thumb {
+  background: var(--line-strong);
+  border-radius: 8px;
+}
+
+@keyframes pulse-dot {
+  0%,
+  100% {
+    opacity: 0.35;
+  }
+  50% {
+    opacity: 1;
+  }
+}
+.pulse-dot {
+  animation: pulse-dot 1.6s ease-in-out infinite;
+}
+
+:where(button, a, input, textarea, select, summary):focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 3px;
+}
+
+.app-nav {
+  display: flex;
+  flex-shrink: 0;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+  padding: 8px 10px max(8px, env(safe-area-inset-bottom));
+  border-top: 1px solid var(--line);
+  background: var(--card);
+}
+.nav-plugins {
+  display: flex;
+  flex: 1;
+  min-width: 0;
+  min-height: 0;
+  gap: 4px;
+  overflow: auto;
+  padding: 4px;
+}
+.nav-personal { display: flex; flex-shrink: 0; gap: 4px; }
+.rail-button {
+  display: flex;
+  flex-shrink: 0;
+  align-items: center;
+  justify-content: center;
+  gap: 5px;
+  min-height: 48px;
+  width: 62px;
+  padding: 6px 3px;
+  border-radius: var(--radius);
+  flex-direction: column;
+}
+.rail-button > svg { flex-shrink: 0; }
+/* Moving a plugin in the rail: the one being dragged fades, a line marks where it lands. */
+.rail-button[data-dragging] { opacity: 0.4; }
+.rail-button[data-drop="before"] { box-shadow: inset 2px 0 0 var(--fg); }
+.rail-button[data-drop="after"] { box-shadow: inset -2px 0 0 var(--fg); }
+@media (min-width: 768px) {
+  .rail-button[data-drop="before"] { box-shadow: inset 0 2px 0 var(--fg); }
+  .rail-button[data-drop="after"] { box-shadow: inset 0 -2px 0 var(--fg); }
+}
+.rail-label {
+  display: block;
+  max-width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: 10px;
+  line-height: 1.3;
+}
+.live-surface .header-icon {
+  background: var(--ink-soft);
+  color: var(--fg);
+  border: 1px solid var(--line);
+}
+.live-surface .page-header > span { opacity: 0.25; height: 2px; }
+.live-surface .page-header { background: var(--card); }
+
+@media (min-width: 768px) {
+  .app-nav {
+    flex-direction: column;
+    width: 80px;
+    min-height: 0;
+    padding: 16px 8px 12px;
+    border-top: 0;
+    border-right: 1px solid var(--line);
+  }
+  .nav-plugins { flex-direction: column; align-items: center; width: 100%; margin-top: 12px; }
+  .nav-personal { flex-direction: column; align-items: center; width: 100%; padding-top: 8px; border-top: 1px solid var(--line); }
+}
+@media (min-width: 1024px) {
+  .app-nav { width: 192px; padding-inline: 12px; }
+  .rail-button { flex-direction: row; justify-content: flex-start; gap: 12px; width: 100%; min-height: 42px; padding: 10px 12px; }
+  .rail-label { font-size: 12px; }
+  .rail-button[aria-current="page"] { font-weight: 600; }
+}
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after { animation-duration: 0.01ms !important; animation-iteration-count: 1 !important; transition-duration: 0.01ms !important; scroll-behavior: auto !important; }
+}
