@@ -1,0 +1,24 @@
+{
+ "name": "Kreivo",
+ "id": "kreivo",
+ "chainType": "Live",
+ "bootNodes": [
+  "/ip4/104.206.91.19/tcp/30333/ws/p2p/12D3KooWP1mhED5zhk5ghkdYH1TSEVTVX2s2hSADz67oLfiYeeXF",
+  "/ip4/104.206.91.19/tcp/30333/p2p/12D3KooWP1mhED5zhk5ghkdYH1TSEVTVX2s2hSADz67oLfiYeeXF",
+  "/ip4/104.206.91.20/tcp/30333/ws/p2p/12D3KooWP1mhED5zhk5ghkdYH1TSEVTVX2s2hSADz67oLfiYeeXF",
+  "/ip4/104.206.93.154/tcp/30333/ws/p2p/12D3KooWP1mhED5zhk5ghkdYH1TSEVTVX2s2hSADz67oLfiYeeXF",
+  "/ip4/63.250.55.66/tcp/30333/ws/p2p/12D3KooWNpsPXUKvg9Gk9te54r4xodSPzVgLUkrfhDPpYXNepCb7",
+  "/ip4/63.250.55.66/tcp/30333/p2p/12D3KooWNpsPXUKvg9Gk9te54r4xodSPzVgLUkrfhDPpYXNepCb7"
+ ],
+ "properties": {
+  "ss58Format": 2,
+  "tokenDecimals": 12,
+  "tokenSymbol": "KSM"
+ },
+ "relay_chain": "ksmcc3",
+ "para_id": 2281,
+ "consensusEngine": null,
+ "genesis": {
+  "stateRootHash": "0x11f1914a3fd9087c3d211c83807ee7e6b48e948bd5e447bbe84c9302e8ccc2ff"
+ }
+}

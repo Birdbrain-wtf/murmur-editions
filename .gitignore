@@ -1,0 +1,44 @@
+node_modules
+dist
+src-tauri/target
+src-tauri/gen
+.DS_Store
+._*
+
+# TS incremental build cache + scratch screenshots
+*.tsbuildinfo
+.shot_*.png
+
+# Release artifacts are served from disk by each edition's update channel
+# (infra/services/app-updates), not tracked.
+# latest.json (the published manifest) is kept.
+release/*.dmg
+release/*.app
+release/*.app.tar.gz
+release/*.app.tar.gz.sig
+release/*/*.dmg
+release/*/*.app.tar.gz
+release/*/*.app.tar.gz.sig
+
+# Invite relationship graph — an append-only event ledger written at runtime by
+# the /api/murmur/invite endpoint. It's data the network accretes (who invited
+# whom), the substrate for the Kabocha graph-compensation model, not source.
+data/
+
+# The Mac-built node program for "Keep a copy" (scripts/mac-node-build.sh), published to birdbrain.wtf
+release/node/
+release/*.AppImage
+release/*.AppImage.sig
+release/*.deb
+release/*.deb.sig
+release/*/*.AppImage
+release/*/*.AppImage.sig
+release/*/*.deb
+release/*/*.deb.sig
+
+# Demo builds (scripts/editions.ts DEMOS), served behind a password by infra/services/app-updates/demo.ts
+release/demo/
+
+# The browser build of the Alder demo (www.decent.partners/try), rebuilt by `bun run build:try`.
+release/web/
+release/simplex/
